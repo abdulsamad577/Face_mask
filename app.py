@@ -71,10 +71,15 @@ if 'stats' not in st.session_state:
         "Without Mask": 0,
         "total_detections": 0
     }
-if 'model' not in st.session_state:
-    st.session_state.model = None
-if 'model_loaded' not in st.session_state:
+if "model_loaded" not in st.session_state:
     st.session_state.model_loaded = False
+
+if "model" not in st.session_state:
+    st.session_state.model = None
+
+if "change_model" not in st.session_state:
+    st.session_state.change_model = False
+
 
 # ---------------------------
 # Configuration
@@ -92,51 +97,67 @@ color_map = {
 st.markdown('<p class="main-header">😷 Face Mask Detection System</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">AI-Powered Real-Time Mask Compliance Monitoring</p>', unsafe_allow_html=True)
 
-if not st.session_state.model_loaded:
-    st.info("📤 Please upload your trained Keras model to get started")
-    
+DEFAULT_MODEL_PATH = "Face_mask.keras"
+
+
+# 1️⃣ Load DEFAULT model automatically
+if not st.session_state.model_loaded and not st.session_state.change_model:
+    try:
+        with st.spinner("Loading default model..."):
+            st.session_state.model = tf.keras.models.load_model(
+                DEFAULT_MODEL_PATH,
+                compile=False
+            )
+            st.session_state.model_loaded = True
+
+        st.success("✅ Default model loaded")
+
+    except Exception as e:
+        st.error(f"❌ Failed to load default model: {e}")
+        st.stop()
+
+
+# 2️⃣ Change model ONLY when user clicks "Change Model"
+if st.session_state.change_model:
+
+    st.info("📤 Upload a new trained Keras model")
+
     uploaded_model = st.file_uploader(
         "Upload Keras Model (.keras or .h5)",
-        type=["keras", "h5"],
-        help="Upload your pre-trained face mask detection model"
+        type=["keras", "h5"]
     )
-    
+
     if uploaded_model is not None:
         try:
-            with st.spinner("Loading model..."):
+            with st.spinner("Loading new model..."):
                 model_bytes = uploaded_model.read()
-                
-                # Try .keras format first
-                try:
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".keras") as tmp:
-                        tmp.write(model_bytes)
-                        model_path = tmp.name
-                    
-                    st.session_state.model = tf.keras.models.load_model(model_path)
-                    st.session_state.model_loaded = True
-                    os.unlink(model_path)
-                    
-                except Exception:
-                    # Fallback to .h5 format
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".h5") as tmp:
-                        tmp.write(model_bytes)
-                        model_path = tmp.name
-                    
-                    st.session_state.model = tf.keras.models.load_model(model_path)
-                    st.session_state.model_loaded = True
-                    os.unlink(model_path)
-                
-                st.success("✅ Model loaded successfully!")
+
+                suffix = ".keras" if uploaded_model.name.endswith(".keras") else ".h5"
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                    tmp.write(model_bytes)
+                    model_path = tmp.name
+
+                st.session_state.model = tf.keras.models.load_model(
+                    model_path,
+                    compile=False
+                )
+
+                st.session_state.model_loaded = True
+                st.session_state.change_model = False  # reset
+                os.unlink(model_path)
+
+                st.success("✅ New model loaded successfully!")
                 st.rerun()
-                
+
         except Exception as e:
             st.error(f"❌ Error loading model: {e}")
-            st.info("Please ensure you're uploading a valid Keras model file.")
-    
-    st.stop()
+            st.stop()
 
-# Model is loaded, continue with app
+
+# 3️⃣ Use loaded model
 model = st.session_state.model
+
 
 # ---------------------------
 # Sidebar Configuration
@@ -146,11 +167,13 @@ with st.sidebar:
     st.title("⚙️ Settings")
     
     # Model status
-    st.success("✅ Model Loaded")
-    if st.button("🔄 Change Model"):
-        st.session_state.model = None
-        st.session_state.model_loaded = False
-        st.rerun()
+    # st.success("✅ Model Loaded")
+    # if st.button("🔄 Change Model"):
+    #     st.session_state.model = None
+    #     st.session_state.model_loaded = False
+    #     st.rerun()
+    st.session_state.change_model = st.sidebar.checkbox("🔁 Change Model")
+
     
     st.divider()
     
