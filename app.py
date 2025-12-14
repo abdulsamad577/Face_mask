@@ -112,7 +112,7 @@ if not st.session_state.model_loaded:
                         tmp.write(model_bytes)
                         model_path = tmp.name
                     
-                    st.session_state.model = tf.keras.models.load_model(model_path)
+                    st.session_state.model = tf.keras.models.load_model(model_path, compile=False)
                     st.session_state.model_loaded = True
                     os.unlink(model_path)
                     
@@ -122,7 +122,7 @@ if not st.session_state.model_loaded:
                         tmp.write(model_bytes)
                         model_path = tmp.name
                     
-                    st.session_state.model = tf.keras.models.load_model(model_path)
+                    st.session_state.model = tf.keras.models.load_model(model_path, compile=False)
                     st.session_state.model_loaded = True
                     os.unlink(model_path)
                 
