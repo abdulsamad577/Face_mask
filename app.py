@@ -97,7 +97,7 @@ color_map = {
 st.markdown('<p class="main-header">😷 Face Mask Detection System</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">AI-Powered Real-Time Mask Compliance Monitoring</p>', unsafe_allow_html=True)
 
-DEFAULT_MODEL_PATH = "Face_mask.keras"
+DEFAULT_MODEL_PATH = "fm.keras"
 
 
 # 1️⃣ Load DEFAULT model automatically
